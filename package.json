@@ -9,7 +9,8 @@
     "android",
     "index.js",
     "ios",
-    "react-native-android-auto.podspec"
+    "react-native-android-auto.podspec",
+    "src"
   ],
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
