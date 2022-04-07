@@ -10,7 +10,6 @@
     "index.js",
     "ios",
     "react-native-android-auto.podspec",
-    "src",
     "lib"
   ],
   "scripts": {
