@@ -1,6 +1,7 @@
 package com.shopify.rnandroidauto;
 
 import android.content.Intent;
+import android.content.res.Configuration;
 import android.os.Bundle;
 import android.util.Log;
 
@@ -18,8 +19,13 @@ import com.facebook.react.bridge.WritableNativeMap;
 import com.facebook.react.common.LifecycleState;
 import com.facebook.react.modules.appregistry.AppRegistry;
 import com.facebook.react.modules.core.TimingModule;
-import com.google.android.libraries.car.app.CarAppService;
-import com.google.android.libraries.car.app.Screen;
+import androidx.car.app.CarAppService;
+import androidx.car.app.CarContext;
+import androidx.car.app.Screen;
+import androidx.car.app.Session;
+import androidx.car.app.hardware.info.CarInfo;
+import androidx.car.app.validation.HostValidator;
+
 import com.shopify.rnandroidauto.AndroidAutoModule;
 import com.shopify.rnandroidauto.AndroidAutoPackage;
 
@@ -27,10 +33,19 @@ public final class CarService extends CarAppService {
     private ReactInstanceManager mReactInstanceManager;
     private CarScreen screen;
 
+    private CarContext mCarContext;
+
     @Override
     public void onCreate() {
+        super.onCreate();
         mReactInstanceManager = ((ReactApplication) getApplication()).getReactNativeHost().getReactInstanceManager();
         // mReactInstanceManager = makeInstance();
+    }
+
+    @NonNull
+    @Override
+    public HostValidator createHostValidator() {
+        return null;
     }
 
     private ReactInstanceManager makeInstance() {
@@ -57,22 +72,30 @@ public final class CarService extends CarAppService {
         return reactInstanceManager;
     }
 
-    @Override
-    @NonNull
-    public Screen onCreateScreen(@Nullable Intent intent) {
-        screen = new CarScreen(getCarContext(), mReactInstanceManager.getCurrentReactContext());
-        screen.setMarker("root");
-        runJsApplication();
+    public Session onCreateSession() {
+        return new Session() {
+            @NonNull
+            @Override
+            public Screen onCreateScreen(@NonNull Intent intent) {
+                mCarContext = getCarContext();
+//                CarInfo carInfo = getCarContext().getCarService(CarHardwareManager.class).getCarInfo();
+                screen = new CarScreen(getCarContext(), mReactInstanceManager.getCurrentReactContext());
+                screen.setMarker("root");
+                runJsApplication();
 
-        return screen;
-    }
+                return screen;
+            }
 
-    @Override
-    public void onCarAppFinished() {
-        super.onCarAppFinished();
+            @Override
+            public void onCarConfigurationChanged(@NonNull Configuration newConfiguration) {
+                super.onCarConfigurationChanged(newConfiguration);
+            }
 
-        // Should we tear down the app here?
-        // mReactInstanceManager.destroy();
+            @Override
+            public void onNewIntent(@NonNull Intent intent) {
+                super.onNewIntent(intent);
+            }
+        };
     }
 
     private void runJsApplication() {
@@ -94,11 +117,6 @@ public final class CarService extends CarAppService {
         }
     }
 
-    @Override
-    public void onNewIntent(@NonNull Intent intent) {
-        super.onNewIntent(intent);
-    }
-
     private void invokeStartTask(ReactContext reactContext) {
         try {
             if (mReactInstanceManager == null) {
@@ -110,7 +128,7 @@ public final class CarService extends CarAppService {
             }
 
             CatalystInstance catalystInstance = reactContext.getCatalystInstance();
-            String jsAppModuleName = "androidAuto";
+            String jsAppModuleName = "android_auto";
 
             WritableNativeMap appParams = new WritableNativeMap();
             appParams.putDouble("rootTag", 1.0);
@@ -125,7 +143,7 @@ public final class CarService extends CarAppService {
             AndroidAutoModule carModule = mReactInstanceManager
                     .getCurrentReactContext()
                     .getNativeModule(AndroidAutoModule.class);
-            carModule.setCarContext(getCarContext(), screen);
+            carModule.setCarContext(mCarContext, screen);
 
             timingModule.onHostResume();
         } finally {

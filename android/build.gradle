@@ -75,7 +75,7 @@ repositories {
 dependencies {
     //noinspection GradleDynamicVersion
     implementation 'com.facebook.react:react-native:+'  // From node_modules
-    implementation "com.google.android.libraries.car:car-app:1.0.0-beta.+"
+    implementation "androidx.car.app:app:1.2.0"
 }
 
 def configureReactNativePom(def pom) {

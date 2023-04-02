@@ -3,25 +3,26 @@ package com.shopify.rnandroidauto;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
+import androidx.car.app.model.Action;
+import androidx.car.app.model.ActionStrip;
+import androidx.car.app.model.CarColor;
+import androidx.car.app.model.CarLocation;
+import androidx.car.app.model.ItemList;
+import androidx.car.app.model.ListTemplate;
+import androidx.car.app.model.Metadata;
+import androidx.car.app.model.Pane;
+import androidx.car.app.model.PaneTemplate;
+import androidx.car.app.model.Place;
+import androidx.car.app.model.PlaceListMapTemplate;
+import androidx.car.app.model.PlaceMarker;
+import androidx.car.app.model.Row;
+import androidx.car.app.model.SectionedItemList;
+import androidx.car.app.model.Template;
 
 import com.facebook.react.bridge.NoSuchKeyException;
 import com.facebook.react.bridge.ReadableArray;
 import com.facebook.react.bridge.ReadableMap;
 import com.facebook.react.bridge.WritableNativeMap;
-import com.google.android.libraries.car.app.model.Action;
-import com.google.android.libraries.car.app.model.ActionStrip;
-import com.google.android.libraries.car.app.model.CarColor;
-import com.google.android.libraries.car.app.model.ItemList;
-import com.google.android.libraries.car.app.model.LatLng;
-import com.google.android.libraries.car.app.model.ListTemplate;
-import com.google.android.libraries.car.app.model.Metadata;
-import com.google.android.libraries.car.app.model.Pane;
-import com.google.android.libraries.car.app.model.PaneTemplate;
-import com.google.android.libraries.car.app.model.Place;
-import com.google.android.libraries.car.app.model.PlaceListMapTemplate;
-import com.google.android.libraries.car.app.model.PlaceMarker;
-import com.google.android.libraries.car.app.model.Row;
-import com.google.android.libraries.car.app.model.Template;
 
 import java.util.ArrayList;
 
@@ -43,14 +44,14 @@ public class TemplateParser {
             case "pane-template":
                 return parsePaneTemplate(renderMap);
             default:
-                return PaneTemplate.builder(
-                        Pane.builder().setIsLoading(true).build()
+                return new PaneTemplate.Builder(
+                        new Pane.Builder().setLoading(true).build()
                 ).setTitle("Shopify Local Delivery").build();
         }
     }
 
     private PaneTemplate parsePaneTemplate(ReadableMap map) {
-        Pane.Builder paneBuilder = Pane.builder();
+        Pane.Builder paneBuilder = new Pane.Builder();
 
         ReadableArray children = map.getArray("children");
 
@@ -62,7 +63,7 @@ public class TemplateParser {
             loading = children.size() == 0;
         }
 
-        paneBuilder.setIsLoading(false);
+        paneBuilder.setLoading(false);
 
 
         ArrayList<Action> actions = new ArrayList();
@@ -82,62 +83,64 @@ public class TemplateParser {
             }
 
             if (actions.size() > 0) {
-                paneBuilder.setActions(actions);
+                for (int i = 0; i < actions.size(); i++) {
+                    paneBuilder.addAction(actions.get(i));
+                }
             }
         }
 
-        PaneTemplate.Builder builder = PaneTemplate.builder(paneBuilder.build());
+        PaneTemplate.Builder Builder = new PaneTemplate.Builder(paneBuilder.build());
 
-        builder.setTitle(map.getString("title"));
+        Builder.setTitle(map.getString("title"));
 
         try {
-            builder.setHeaderAction(getHeaderAction(map.getString("headerAction")));
+            Builder.setHeaderAction(getHeaderAction(map.getString("headerAction")));
         } catch (NoSuchKeyException e) {
         }
 
         try {
             ReadableMap actionStripMap = map.getMap("actionStrip");
-            builder.setActionStrip(parseActionStrip(actionStripMap));
+            Builder.setActionStrip(parseActionStrip(actionStripMap));
         } catch (NoSuchKeyException e) {
         }
 
 
-        return builder.build();
+        return Builder.build();
     }
 
     private ActionStrip parseActionStrip(ReadableMap map) {
-        ActionStrip.Builder builder = ActionStrip.builder();
+        ActionStrip.Builder Builder = new ActionStrip.Builder();
 
         ReadableArray actions = map.getArray("actions");
 
         for (int i = 0; i < actions.size(); i++) {
             ReadableMap actionMap = actions.getMap(i);
             Action action = parseAction(actionMap);
-            builder.addAction(action);
+            Builder.addAction(action);
         }
 
-        return builder.build();
+        return Builder.build();
     }
 
     private Action parseAction(ReadableMap map) {
-        Action.Builder builder = Action.builder();
+        Action.Builder Builder = new Action.Builder();
 
-        builder.setTitle(map.getString("title"));
+        Builder.setTitle(map.getString("title"));
         try {
-            builder.setBackgroundColor(getColor(map.getString("backgroundColor")));
+            Builder.setBackgroundColor(getColor(map.getString("backgroundColor")));
         } catch (NoSuchKeyException e) {
         }
 
         try {
             int onPress = map.getInt("onPress");
 
-            builder.setOnClickListener(() -> {
+            Builder.setOnClickListener(() -> {
                 invokeCallback(onPress);
             });
         } catch (NoSuchKeyException e) {
         }
 
-        return builder.build();
+        return Builder.build();
     }
 
     private CarColor getColor(String colorName) {
@@ -161,14 +164,14 @@ public class TemplateParser {
     }
 
     private PlaceListMapTemplate parsePlaceListMapTemplate(ReadableMap map) {
-        PlaceListMapTemplate.Builder builder = PlaceListMapTemplate.builder();
+        PlaceListMapTemplate.Builder Builder = new PlaceListMapTemplate.Builder();
 
-        builder.setTitle(map.getString("title"));
+        Builder.setTitle(map.getString("title"));
         ReadableArray children = map.getArray("children");
 
 
         try {
-            builder.setHeaderAction(getHeaderAction(map.getString("headerAction")));
+            Builder.setHeaderAction(getHeaderAction(map.getString("headerAction")));
         } catch (NoSuchKeyException e) {
         }
 
@@ -180,10 +183,10 @@ public class TemplateParser {
             loading = children.size() == 0;
         }
 
-        builder.setIsLoading(loading);
+        Builder.setLoading(loading);
 
         if (!loading) {
-            ItemList.Builder itemListBuilder = ItemList.builder();
+            ItemList.Builder itemListBuilder = new ItemList.Builder();
 
             for (int i = 0; i < children.size(); i++) {
                 ReadableMap child = children.getMap(i);
@@ -194,23 +197,23 @@ public class TemplateParser {
                 }
             }
 
-            builder.setItemList(itemListBuilder.build());
+            Builder.setItemList(itemListBuilder.build());
         }
 
 
         try {
             ReadableMap actionStripMap = map.getMap("actionStrip");
-            builder.setActionStrip(parseActionStrip(actionStripMap));
+            Builder.setActionStrip(parseActionStrip(actionStripMap));
         } catch (NoSuchKeyException e) {
         }
 
-        return builder.build();
+        return Builder.build();
     }
 
     private ListTemplate parseListTemplateChildren(ReadableMap map) {
         ReadableArray children = map.getArray("children");
 
-        ListTemplate.Builder builder = ListTemplate.builder();
+        ListTemplate.Builder Builder = new ListTemplate.Builder();
 
         boolean loading;
 
@@ -220,65 +223,67 @@ public class TemplateParser {
             loading = children.size() == 0;
         }
 
-        builder.setIsLoading(loading);
+        Builder.setLoading(loading);
 
         if (!loading) {
             for (int i = 0; i < children.size(); i++) {
                 ReadableMap child = children.getMap(i);
                 String type = child.getString("type");
                 if (type.equals("item-list")) {
-                    builder.addList(parseItemListChildren(child), child.getString("header"));
+                    Builder.setSingleList(parseItemListChildren(child));
+                } else if (type.equals("section-list")) {
+                    Builder.addSectionedList(SectionedItemList.create(parseItemListChildren(child), child.getString("header")));
                 }
             }
         }
 
         try {
-            builder.setHeaderAction(getHeaderAction(map.getString("headerAction")));
+            Builder.setHeaderAction(getHeaderAction(map.getString("headerAction")));
         } catch (NoSuchKeyException e) {
         }
 
         try {
             ReadableMap actionStripMap = map.getMap("actionStrip");
-            builder.setActionStrip(parseActionStrip(actionStripMap));
+            Builder.setActionStrip(parseActionStrip(actionStripMap));
         } catch (NoSuchKeyException e) {
         }
 
-        builder.setTitle(map.getString("title"));
+        Builder.setTitle(map.getString("title"));
 
-        return builder.build();
+        return Builder.build();
     }
 
     private ItemList parseItemListChildren(ReadableMap itemList) {
         ReadableArray children = itemList.getArray("children");
-        ItemList.Builder builder = ItemList.builder();
+        ItemList.Builder Builder = new ItemList.Builder();
 
         for (int i = 0; i < children.size(); i++) {
             ReadableMap child = children.getMap(i);
             String type = child.getString("type");
             if (type.equals("row")) {
-                builder.addItem(buildRow(child));
+                Builder.addItem(buildRow(child));
             }
         }
 
         try {
-            builder.setNoItemsMessage(itemList.getString("noItemsMessage"));
+            Builder.setNoItemsMessage(itemList.getString("noItemsMessage"));
         } catch (NoSuchKeyException e) {
         }
 
-        return builder.build();
+        return Builder.build();
     }
 
     @NonNull
     private Row buildRow(ReadableMap rowRenderMap) {
-        Row.Builder builder = Row.builder();
+        Row.Builder Builder = new Row.Builder();
 
-        builder.setTitle(rowRenderMap.getString("title"));
+        Builder.setTitle(rowRenderMap.getString("title"));
 
         try {
             ReadableArray texts = rowRenderMap.getArray("texts");
 
             for (int i = 0; i < texts.size(); i++) {
-                builder.addText(texts.getString(i));
+                Builder.addText(texts.getString(i));
             }
         } catch (NoSuchKeyException e) {
         }
@@ -286,32 +291,31 @@ public class TemplateParser {
         try {
             int onPress = rowRenderMap.getInt("onPress");
 
-            builder.setIsBrowsable(true);
+            Builder.setBrowsable(true);
 
-            builder.setOnClickListener(() -> {
+            Builder.setOnClickListener(() -> {
                 invokeCallback(onPress);
             });
         } catch (NoSuchKeyException e) {
         }
 
         try {
-            builder.setMetadata(parseMetaData(rowRenderMap.getMap("metadata")));
+            Builder.setMetadata(parseMetaData(rowRenderMap.getMap("metadata")));
         } catch (NoSuchKeyException e) {
         }
 
-        return builder.build();
+        return Builder.build();
     }
 
     private Metadata parseMetaData(ReadableMap map) {
         switch (map.getString("type")) {
             case "place":
-                return Metadata
-                        .ofPlace(
-                                Place
-                                        .builder(LatLng.create(map.getDouble("latitude"), map.getDouble("longitude")))
-                                        .setMarker(PlaceMarker.getDefault())
+                return new Metadata.Builder()
+                        .setPlace(
+                                new Place.Builder(CarLocation.create(map.getDouble("latitude"), map.getDouble("longitude")))
+                                        .setMarker(new PlaceMarker.Builder().build())
                                         .build()
-                        );
+                        ).build();
             default:
                 return null;
         }
